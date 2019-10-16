@@ -18,7 +18,7 @@ public class ProjectMain {
     private String nextIP;
     private int nextPort;
 
-    private ProjectMain() {
+   private ProjectMain() {
 
     }
 
