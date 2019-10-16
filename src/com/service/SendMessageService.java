@@ -1,6 +1,6 @@
 package com.service;
 
-import com.socket.Node;
+import com.socket.ProjectMain;
 
 import java.io.OutputStreamWriter;
 import java.io.Writer;
@@ -25,12 +25,12 @@ public class SendMessageService implements Runnable {
                 int time = 1000 * (int)(1 + Math.random() * 5);
                 Thread.sleep(30000);
 
-                writer.write(Node.output());
+                writer.write(ProjectMain.output());
                 writer.write(" eof\n");
                 writer.flush();
 
                 System.out.print("AS:");
-                Node.test();
+                ProjectMain.test();
             }
 
             writer.close();
