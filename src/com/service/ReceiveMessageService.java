@@ -1,6 +1,6 @@
 package com.service;
 
-import com.socket.Node;
+import com.socket.ProjectMain;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -40,10 +40,10 @@ public class ReceiveMessageService implements Runnable{
                 in.put("B",Integer.parseInt(num[1]));
                 in.put("C",Integer.parseInt(num[2]));
 
-                Node.receive(in);
+                ProjectMain.receive(in);
 
                 System.out.print("AR:");
-                Node.test();
+                ProjectMain.test();
             }
 
         }catch (IOException e){

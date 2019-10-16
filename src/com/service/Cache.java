@@ -22,8 +22,7 @@ public class Cache extends HashMap<String,Integer>{
     private final Lock w = lock.writeLock();
 
     public Cache() {
-        Map<String, Integer> temp = new HashMap<>();
-        this.map = temp;
+        this.map = new HashMap<>();
 
         this.map.put("A", SocketConstant.CACHE_INITIALIZED_SIZE);
         this.map.put("B", SocketConstant.CACHE_INITIALIZED_SIZE);
@@ -120,7 +119,7 @@ public class Cache extends HashMap<String,Integer>{
         System.out.println("B"+free.get("B"));
         System.out.println("C"+free.get("C"));
 
-        Map<String,Integer> fuck = new HashMap<>();
+        Map<String,Integer> fuck;
 
         fuck = free.transfer();
 
