@@ -4,13 +4,19 @@ import com.SocketConstant;
 import com.service.Cache;
 import com.service.ReceiveMessageService;
 import com.service.SendMessageService;
+import com.socket.msg.ApplicationMsg;
+import com.socket.msg.Message;
 
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
+enum State { SNAPPING,WORKING }
 
 public class ProjectMain {
     private static Cache cache;
@@ -18,7 +24,22 @@ public class ProjectMain {
     private String nextIP;
     private int nextPort;
 
-   private ProjectMain() {
+    private int currentNode;
+    private int[] neighbors;
+
+    private State currentState = State.WORKING;
+    private Boolean active = false;
+
+    ArrayList<Node> nodesInSystem = new ArrayList<>();
+    HashMap<Integer,Node> nodesMapInSystem = new HashMap<>();
+    HashMap<Integer,Socket> channels = new HashMap<>();
+
+    private HashMap<Integer,ObjectOutputStream> outputStreamHashMap = new HashMap<>();
+
+    // Message Buffer Waiting to be Sent While Process is Snapping
+    private HashMap<Integer,ConcurrentLinkedQueue<ApplicationMsg>> waitingBuffer = new HashMap<>();
+
+    private ProjectMain() {
 
     }
 
@@ -81,6 +102,8 @@ public class ProjectMain {
 
         this.nextIP = "192.168.43.43";
         this.nextPort = 8899;
+
+        this.active = true;
     }
 
     public boolean rollDice(int n) {
@@ -104,26 +127,147 @@ public class ProjectMain {
         cache.print();
     }
 
-    public static void sayHello(Socket socket) {
+    // Function to generate random number in a given range
+    private int getRandomNumber(int min, int max){
+       if(min == max) {
+           return min;
+       }else {
+           Random rand = new Random();
+
+           return rand.nextInt((max - min) + 1) + min;
+       }
+    }
+
+    public void emitMessages() {
+       // get a random number between minPerActive to maxPerActive to emit that many messages
+        int numMsgs;
+
+        synchronized(this){
+            numMsgs = this.getRandomNumber(SocketConstant.MIN_PER_ACTIVE,SocketConstant.MAX_PER_ACTIVE);
+        }
+
+        for(int i = 0; i < numMsgs; i++){
+            if(this.currentState == State.WORKING) {
+                if(this.waitingBuffer.isEmpty()) {
+                    synchronized(this){
+                        int neighborIndex = this.getRandomNumber(0, this.neighbors.length-1);
+                        int curNeighbor = this.neighbors[neighborIndex];
+
+                        if(judge()){
+                            //send application message
+                            ApplicationMsg m = getApplicationMsg();
+                            m.nodeId = this.currentNode;
+
+                            // Write the message in the channel connecting to neighbor
+                            emitSingleMessage(curNeighbor,m);
+                        }
+                    }
+                    // Wait for minimum sending delay before sending another message
+                    try {
+                        Thread.sleep(SocketConstant.MIN_SEND_DELAY);
+                    } catch (InterruptedException e) {
+                        System.out.println("Error in EmitMessages");
+                    }
+                }else {
+                    synchronized (this){
+                        int j;
+                        int curNeighbor = 0;
+
+                        for(j = 0; j < this.neighbors.length-1; j++) {
+                            if(waitingBuffer.containsKey(j)) {
+                                curNeighbor = this.neighbors[j];
+                                break;
+                            }
+                        }
+
+                        if(judge()) {
+                            ConcurrentLinkedQueue<ApplicationMsg> msgBuffer = waitingBuffer.get(j);
+                            ApplicationMsg m = msgBuffer.poll();
+                            m.nodeId = this.currentNode;
+
+                            // Write the message in the channel connecting to neighbor
+                            emitSingleMessage(curNeighbor,m);
+
+                            if(msgBuffer.isEmpty())
+                                waitingBuffer.remove(j);
+                            else
+                                waitingBuffer.replace(j,msgBuffer);
+                        }
+                    }
+                    // Wait for minimum sending delay before sending another message
+                    try {
+                        Thread.sleep(SocketConstant.MIN_SEND_DELAY);
+                    } catch (InterruptedException e) {
+                        System.out.println("Error in EmitMessages");
+                    }
+                }
+            } else if(currentState == State.SNAPPING){
+                synchronized (this){
+                    if(judge()) {
+                        int neighborIndex = this.getRandomNumber(0, this.neighbors.length-1);
+                        int curNeighbor = this.neighbors[neighborIndex];
+
+                        if(judge()){
+                            //send application message
+                            ApplicationMsg m = getApplicationMsg();
+                            m.nodeId = this.currentNode;
+
+                            // Write the message in the waitingBuffer
+                            if(waitingBuffer.containsKey(curNeighbor)) {
+                                ConcurrentLinkedQueue<ApplicationMsg> q = waitingBuffer.get(curNeighbor);
+                                q.add(m);
+
+                                waitingBuffer.replace(curNeighbor,q);
+                            }else {
+                                ConcurrentLinkedQueue<ApplicationMsg> q = new ConcurrentLinkedQueue<>();
+                                q.add(m);
+
+                                waitingBuffer.put(curNeighbor,q);
+                            }
+                        }
+                    }
+                }
+                // Wait for minimum sending delay before sending another message
+                try {
+                    Thread.sleep(SocketConstant.MIN_SEND_DELAY);
+                } catch (InterruptedException e) {
+                    System.out.println("Error in EmitMessages");
+                }
+            }
+        }
+    }
+
+    private void emitSingleMessage(int curNeighbor, Message m) {
         try {
-            Writer writer = new OutputStreamWriter(socket.getOutputStream(), "GBK");
-            writer.write("Aloha!");
-            writer.write(" eof\n");
-            writer.flush();
-            writer.close();
+
+            ObjectOutputStream oos = this.outputStreamHashMap.get(curNeighbor);
+            oos.writeObject(m);
+            oos.flush();
+
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
 
+    private ApplicationMsg getApplicationMsg() {
+        //TODO 生成业务信息并放入ApplicationMsg，参考SendMessageService
+
+        return new ApplicationMsg();
+    }
+
+    private Boolean judge() {
+        synchronized (this) {
+            //TODO 通过随机判断是否需要产生新的ApplicationMsg
+        }
+        return this.active;
     }
 
     public static void main(String[] args) {
+        //TODO 线程调用策略
         ProjectMain me = new ProjectMain();
         me.initialize();
 
         try {
-
-
             new Thread(new ReceiveMessageService(me.nextPort)).start();
 
             Thread.sleep(SocketConstant.WAITING_TIME_OUT);

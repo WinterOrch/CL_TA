@@ -11,6 +11,6 @@ public class StateMsg extends Message implements Serializable {
     int[] vector;
 
     public StateMsg() {
-        super.serialUID = 3;
+
     }
 }

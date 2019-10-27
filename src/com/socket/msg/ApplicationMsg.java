@@ -6,11 +6,11 @@ import java.io.Serializable;
 public class ApplicationMsg extends Message implements Serializable {
     String msg = "Aloha!";
 
-    int nodeId;
-    int[] vector;
+    public int nodeId;
+    // int[] vector;
 
     public ApplicationMsg() {
-        super.serialUID = 1;
+
     }
 
     public ApplicationMsg(String m) {
