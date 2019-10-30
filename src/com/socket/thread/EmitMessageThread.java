@@ -3,7 +3,7 @@ package com.socket.thread;
 import com.SocketConstant;
 import com.socket.ProjectMain;
 
-class EmitMessageThread extends Thread{
+public class EmitMessageThread extends Thread{
 
     private ProjectMain mainObj;
 
@@ -11,7 +11,7 @@ class EmitMessageThread extends Thread{
         this.mainObj = mainObj;
     }
     public void run(){
-        boolean isRunning = true;   // TODO 窗口开放策略
+        boolean isRunning = true;   // TODO 4.1 窗口开放策略
 
         try {
             while(isRunning) {

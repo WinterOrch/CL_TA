@@ -2,7 +2,7 @@ package com.socket.thread;
 
 import com.socket.ProjectMain;
 
-class ChandyLamportThread extends Thread{
+public class ChandyLamportThread extends Thread{
 
     ProjectMain mainObj;
 

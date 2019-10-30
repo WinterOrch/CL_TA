@@ -20,4 +20,16 @@ public class SocketConstant {
     //  Constants for Chandy-Lamport Protocol
     public static final String MARKER_STRING = "A MARKER THIS IS";
     public static final String TERMINATE_STRING = "HALT";
+
+    public static boolean isIPAddressByRegex(String str) {
+        String regex = "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}";
+        if (str.matches(regex)) {
+            String[] arr = str.split("\\.");
+            for (int i = 0; i < 4; i++) {
+                int temp = Integer.parseInt(arr[i]);
+                if (temp < 0 || temp > 255) return false;
+            }
+            return true;
+        } else return false;
+    }
 }

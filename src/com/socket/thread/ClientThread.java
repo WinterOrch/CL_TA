@@ -8,12 +8,12 @@ import java.io.ObjectInputStream;
 import java.net.Socket;
 
 //Server reading objects sent by other clients in the system in a thread
-class ClientThread extends Thread {
+public class ClientThread extends Thread {
     Socket cSocket;
     ProjectMain mainObj;
 
-    public ClientThread(Socket csocket, ProjectMain mainObj) {
-        this.cSocket = csocket;
+    public ClientThread(Socket socket, ProjectMain mainObj) {
+        this.cSocket = socket;
         this.mainObj = mainObj;
     }
 

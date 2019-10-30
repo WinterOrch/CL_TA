@@ -10,6 +10,8 @@ import java.util.HashMap;
 public class Map implements Serializable{
     public int numNodes;
 
+    private ProjectMain main;
+
     // Nodes in this system
     private ArrayList<Node> nodesInSystem = new ArrayList<>();
     //
@@ -19,13 +21,21 @@ public class Map implements Serializable{
     HashMap<Integer,Boolean> markerReceived = new HashMap<>();
 
     public Map() {
-        //TODO 拓扑策略
+        //TODO 3.1 拓扑策略
+        main = new ProjectMain();
+
         Node node_1 = new Node(0,"192.168.43.43",8899);
         nodesInSystem.add(node_1);
     }
 
     public ArrayList<Node> getMap() {
         return nodesInSystem;
+    }
+
+    public static ProjectMain getMain() {
+        Map map = new Map();
+
+        return map.main;
     }
 
 }

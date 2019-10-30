@@ -2,18 +2,17 @@ package com.socket;
 
 import com.SocketConstant;
 import com.service.Cache;
-import com.service.ReceiveMessageService;
-import com.service.SendMessageService;
 import com.socket.msg.ApplicationMsg;
 import com.socket.msg.Message;
+import com.socket.thread.*;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 enum State { SNAPPING,WORKING }
@@ -24,23 +23,28 @@ public class ProjectMain {
     private String nextIP;
     private int nextPort;
 
-    private int currentNode;
+    private int currentId;
+    private int numOfNodes;
     private int[] neighbors;
+
+    private HashMap<Integer,Node> nodesMapInSystem = new HashMap<>();
+    private HashMap<Integer,Socket> channels = new HashMap<>();
 
     private State currentState = State.WORKING;
     private Boolean active = false;
 
+    //  Map Protocol's Concern
+    int currentNode;
     ArrayList<Node> nodesInSystem = new ArrayList<>();
-    HashMap<Integer,Node> nodesMapInSystem = new HashMap<>();
-    HashMap<Integer,Socket> channels = new HashMap<>();
+    int[][] adjMatrix;
 
     private HashMap<Integer,ObjectOutputStream> outputStreamHashMap = new HashMap<>();
 
     // Message Buffer Waiting to be Sent While Process is Snapping
     private HashMap<Integer,ConcurrentLinkedQueue<ApplicationMsg>> waitingBuffer = new HashMap<>();
 
-    private ProjectMain() {
-
+    ProjectMain() {
+        this.initialize();
     }
 
     private void initialize() {
@@ -106,17 +110,22 @@ public class ProjectMain {
         this.active = true;
     }
 
-    public boolean rollDice(int n) {
-        Random r = new Random();
-        int temp = r.nextInt(SocketConstant.FACE_NUM_OF_DICE) + 1;
-
-        return temp <= n;
-    }
-
-    public static String output() {
+    public static String map2Token() {
         Map<String,Integer> temp = cache.transfer();
         return temp.get("A").toString() + " " + temp.get("B").toString()
                 + " " + temp.get("C").toString();
+    }
+
+    private static Map<String, Integer> token2Map(String s) {
+        Map<String, Integer> in;
+        String[] num = s.split(" ");
+
+        in = new HashMap<>();
+        in.put("A",Integer.parseInt(num[0]));
+        in.put("B",Integer.parseInt(num[1]));
+        in.put("C",Integer.parseInt(num[2]));
+
+        return in;
     }
 
     public static void receive(Map<String,Integer> in) {
@@ -156,7 +165,7 @@ public class ProjectMain {
                         if(judge()){
                             //send application message
                             ApplicationMsg m = getApplicationMsg();
-                            m.nodeId = this.currentNode;
+                            m.nodeId = this.currentId;
 
                             // Write the message in the channel connecting to neighbor
                             emitSingleMessage(curNeighbor,m);
@@ -183,7 +192,7 @@ public class ProjectMain {
                         if(judge()) {
                             ConcurrentLinkedQueue<ApplicationMsg> msgBuffer = waitingBuffer.get(j);
                             ApplicationMsg m = msgBuffer.poll();
-                            m.nodeId = this.currentNode;
+                            m.nodeId = this.currentId;
 
                             // Write the message in the channel connecting to neighbor
                             emitSingleMessage(curNeighbor,m);
@@ -210,7 +219,7 @@ public class ProjectMain {
                         if(judge()){
                             //send application message
                             ApplicationMsg m = getApplicationMsg();
-                            m.nodeId = this.currentNode;
+                            m.nodeId = this.currentId;
 
                             // Write the message in the waitingBuffer
                             if(waitingBuffer.containsKey(curNeighbor)) {
@@ -239,10 +248,13 @@ public class ProjectMain {
 
     private void emitSingleMessage(int curNeighbor, Message m) {
         try {
-
             ObjectOutputStream oos = this.outputStreamHashMap.get(curNeighbor);
             oos.writeObject(m);
             oos.flush();
+
+            if(m instanceof ApplicationMsg) {
+                ProjectMain.cache.transfer(ProjectMain.token2Map(((ApplicationMsg)m).getMsg()));
+            }
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -250,21 +262,82 @@ public class ProjectMain {
     }
 
     private ApplicationMsg getApplicationMsg() {
-        //TODO 生成业务信息并放入ApplicationMsg，参考SendMessageService
+        //TODO 2.1  生成业务信息并放入ApplicationMsg，参考SendMessageService
 
         return new ApplicationMsg();
     }
 
     private Boolean judge() {
         synchronized (this) {
-            //TODO 通过随机判断是否需要产生新的ApplicationMsg
+            //TODO 2.2  通过随机判断是否需要产生新的ApplicationMsg
         }
         return this.active;
     }
 
-    public static void main(String[] args) {
-        //TODO 线程调用策略
-        ProjectMain me = new ProjectMain();
+    public static void main(String[] args) throws IOException, InterruptedException{
+        ProjectMain mainObj = com.socket.Map.getMain();
+        int curNode = mainObj.currentNode;
+        int serverPort = mainObj.nodesInSystem.get(mainObj.currentNode).port;
+        mainObj.numOfNodes = mainObj.nodesInSystem.size();
+
+        mainObj.currentId = mainObj.nodesInSystem.get(mainObj.currentNode).nodeId;
+
+        for(int i = 0; i < mainObj.nodesInSystem.size(); i++){
+            mainObj.nodesMapInSystem.put(mainObj.nodesMapInSystem.get(i).nodeId, mainObj.nodesInSystem.get(i));
+        }
+
+        //  Start Server on Current Node
+        ServerSocket listener = new ServerSocket(serverPort);
+        Thread.sleep(SocketConstant.WAITING_TIME_OUT);
+
+        //  Open Channels
+        for(int i = 0; i < mainObj.numOfNodes; i++) {
+            if(0 != mainObj.adjMatrix[curNode][i]) {
+                String hostName = mainObj.nodesInSystem.get(i).host;
+                int port = mainObj.nodesInSystem.get(i).port;
+
+                Socket client;
+
+                if(SocketConstant.isIPAddressByRegex(hostName)) {
+                    InetAddress address = InetAddress.getByName(hostName);
+                    client = new Socket(address, port);
+                }else {
+                    client = new Socket(hostName, port);
+                }
+
+                mainObj.channels.put(i,client);
+
+                ObjectOutputStream oos = new ObjectOutputStream(client.getOutputStream());
+                mainObj.outputStreamHashMap.put(i,oos);
+            }
+
+            //  Populate Neighbors Array
+            int index = 0;
+            Set<Integer> keys = mainObj.channels.keySet();
+            mainObj.neighbors = new int[keys.size()];
+            for(Integer element : keys) mainObj.neighbors[index++] = element;
+        }
+
+        mainObj.active = true;
+
+        // This node listens as a Server for the clients requests
+        Socket socket = listener.accept();
+        // For every client request start a new thread
+        new ClientThread(socket, mainObj).start();
+        new EmitMessageThread(mainObj).start();
+
+        //Initially node 0 is active therefore if this node is 0 then it should be active
+        if(mainObj.currentId == 0){
+            ////System.out.println("Emitted Messages");
+            //Call Chandy Lamport protocol if it is node 0
+            new ChandyLamportThread(mainObj).start();
+
+        }
+
+        /*
+         * 原来的主函数
+         *
+         * ProjectMain me = new ProjectMain();
         me.initialize();
 
         try {
@@ -280,5 +353,8 @@ public class ProjectMain {
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
+         *
+         * **/
+
     }
 }

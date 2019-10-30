@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 //  Application Message Consists of a String and a Vector Timestamp
 public class ApplicationMsg extends Message implements Serializable {
-    String msg = "Aloha!";
+    private String msg = "Aloha!";
 
     public int nodeId;
     // int[] vector;
@@ -16,5 +16,9 @@ public class ApplicationMsg extends Message implements Serializable {
     public ApplicationMsg(String m) {
         this();
         msg = m;
+    }
+
+    public String getMsg() {
+        return this.msg;
     }
 }

@@ -48,7 +48,7 @@ public class Cache extends HashMap<String,Integer>{
     }
 
     // Could only be used in this sample
-    public Map<String,Integer> transfer() {
+    public Map<String,Integer> transfer() { // TODO 1.1
         r.lock();
         try {
             Map<String,Integer> tempMap = new HashMap<>();
@@ -86,6 +86,10 @@ public class Cache extends HashMap<String,Integer>{
         } finally {
             r.unlock();
         }
+    }
+
+    public void transfer( Map<String,Integer> m ) {
+        //  TODO 1.2
     }
 
     public void receive( Map<String,Integer> m ) {
