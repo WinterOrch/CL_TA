@@ -28,7 +28,7 @@
 
   例如对于如下图所示的拓扑结构，
 
-<img src="https://github.com/WinterOrch/CL_TA/blob/mod/示意图.jpg\>
+  <img src="https://github.com/WinterOrch/CL_TA/blob/mod/示意图.jpg" width="190" height="180" /> 
 
   当甲，乙，丙分别对应序号0，1，2时，邻接矩阵应当如下所示：
 
