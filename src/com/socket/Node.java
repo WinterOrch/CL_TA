@@ -5,7 +5,7 @@ public class Node {
     String host;
     int port;
 
-    public Node(int nodeId, String host, int port) {
+    Node(int nodeId, String host, int port) {
         super();
         this.nodeId = nodeId;
         this.host = host;

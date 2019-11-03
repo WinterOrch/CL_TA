@@ -3,6 +3,7 @@ package com.socket;
 import com.SocketConstant;
 import com.service.Cache;
 import com.socket.msg.ApplicationMsg;
+import com.socket.msg.MarkerMsg;
 import com.socket.msg.Message;
 import com.socket.thread.*;
 
@@ -19,9 +20,6 @@ enum State { SNAPPING,WORKING }
 
 public class ProjectMain {
     private static Cache cache;
-
-    private String nextIP;
-    private int nextPort;
 
     private int currentId;
     private int numOfNodes;
@@ -51,72 +49,22 @@ public class ProjectMain {
         //  Initialize Cache
         cache = new Cache();
 
-        /*
-        //  Read Address List from Config.txt
-        FileReader fr;
-        StreamTokenizer st = null;
-
-        try{
-            fr = new FileReader("./config.txt" );
-            st = new StreamTokenizer( fr );
-        }catch( FileNotFoundException e ){
-            System.err.println("File not found.");
-            System.exit(1);
-        }
-
-        try{
-            st.nextToken();
-            int num = (int)st.nval;
-            System.out.println(num);
-            this.addressList = new String[num];
-            this.portList = new int[num];
-
-            for(int i = 0; i < num; i++) {
-                st.nextToken();
-                if( (int)st.nval == i ){
-                    st.nextToken();
-                    addressList[i] = st.sval;
-                    System.out.println(addressList[i]);
-                }
-                st.nextToken();
-                portList[i] = (int)st.nval;
-                System.out.println(portList[i]);
-            }
-
-            st.nextToken();
-            this.numNode = (int)st.nval;
-
-            System.out.println(numNode);
-
-            if( numNode >= num || numNode < 0 ) {
-                System.err.println("Wrong number for this node..");
-                System.exit(1);
-            }else {
-                this.nextIP = addressList[(numNode + 1) % num];
-                this.nextPort = portList[(numNode + 1) % num];
-            }
-
-        } catch (IOException e) {
-            System.err.println("Cannot read the config file.");
-            System.exit(1);
-        } catch( NoSuchElementException e ) {
-            System.err.println("There are mistakes in the config file.");
-            System.exit(1);
-        }*/
-
-        this.nextIP = "192.168.43.43";
-        this.nextPort = 8899;
-
         this.active = true;
     }
 
+    /**
+     * 生成新的转账信息并生成String
+     */
     public static String map2Token() {
         Map<String,Integer> temp = cache.transfer();
         return temp.get("A").toString() + " " + temp.get("B").toString()
                 + " " + temp.get("C").toString();
     }
 
-    private static Map<String, Integer> token2Map(String s) {
+    /**
+     * 将String形式的转账信息转换为Map形式
+     */
+    public static Map<String, Integer> token2Map(String s) {
         Map<String, Integer> in;
         String[] num = s.split(" ");
 
@@ -246,6 +194,17 @@ public class ProjectMain {
         }
     }
 
+    /**
+     * 发送Marker给ID为neighbour的邻节点
+     */
+    public void sendMarkerMessage(int neighbour) {
+        MarkerMsg m = new MarkerMsg(this.currentId);
+        this.emitSingleMessage(neighbour,m);
+    }
+
+    /**
+     * 发送信息m给ID为neighbour的邻节点
+     */
     private void emitSingleMessage(int curNeighbor, Message m) {
         try {
             ObjectOutputStream oos = this.outputStreamHashMap.get(curNeighbor);
@@ -262,20 +221,24 @@ public class ProjectMain {
     }
 
     private ApplicationMsg getApplicationMsg() {
-        //TODO 2.1  生成业务信息并放入ApplicationMsg，参考SendMessageService
-
-        return new ApplicationMsg();
+        return new ApplicationMsg(map2Token());
     }
 
+    /**
+     * 产生转账信息频率，可通过更改常量改变
+     */
     private Boolean judge() {
         synchronized (this) {
-            //TODO 2.2  通过随机判断是否需要产生新的ApplicationMsg
+            int randomNumber=(int)(Math.random()*100)+1;
+            this.active = randomNumber < 40;
+
         }
         return this.active;
     }
 
     public static void main(String[] args) throws IOException, InterruptedException{
-        ProjectMain mainObj = com.socket.Map.getMain();
+        //  从Map获得拓扑
+        ProjectMain mainObj = new com.socket.Map().getMain();
         int curNode = mainObj.currentNode;
         int serverPort = mainObj.nodesInSystem.get(mainObj.currentNode).port;
         mainObj.numOfNodes = mainObj.nodesInSystem.size();
@@ -326,35 +289,6 @@ public class ProjectMain {
         new ClientThread(socket, mainObj).start();
         new EmitMessageThread(mainObj).start();
 
-        //Initially node 0 is active therefore if this node is 0 then it should be active
-        if(mainObj.currentId == 0){
-            ////System.out.println("Emitted Messages");
-            //Call Chandy Lamport protocol if it is node 0
-            new ChandyLamportThread(mainObj).start();
-
-        }
-
-        /*
-         * 原来的主函数
-         *
-         * ProjectMain me = new ProjectMain();
-        me.initialize();
-
-        try {
-            new Thread(new ReceiveMessageService(me.nextPort)).start();
-
-            Thread.sleep(SocketConstant.WAITING_TIME_OUT);
-
-            // ProjectMain.sayHello(socket);
-            Socket socket = new Socket(me.nextIP, me.nextPort);
-
-            new Thread(new SendMessageService(socket)).start();
-
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
-         *
-         * **/
-
+        // TODO 4.1 0号节点触发快照协议
     }
 }

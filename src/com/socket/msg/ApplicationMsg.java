@@ -2,14 +2,15 @@ package com.socket.msg;
 
 import java.io.Serializable;
 
-//  Application Message Consists of a String and a Vector Timestamp
+/**
+ * 业务消息，用于传输转账信息
+ */
 public class ApplicationMsg extends Message implements Serializable {
     private String msg = "Aloha!";
 
-    public int nodeId;
     // int[] vector;
 
-    public ApplicationMsg() {
+    private ApplicationMsg() {
 
     }
 

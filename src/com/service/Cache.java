@@ -47,50 +47,46 @@ public class Cache extends HashMap<String,Integer>{
         }
     }
 
-    // Could only be used in this sample
-    public Map<String,Integer> transfer() { // TODO 1.1
+    /**
+     * 随机生成小于SocketConstant.TRANSFER_MAX_SIZE的转账金额，可自行调整
+     */
+    public Map<String,Integer> transfer() {
+        Map<String,Integer> tempMap = new HashMap<>();
+
+        BigDecimal t1;
+        BigDecimal t2;
+
+        t1 = new BigDecimal(Double.toString(Math.random()));
+        t2 = new BigDecimal(SocketConstant.TRANSFER_MAX_SIZE);
+        int toBeSent_A = t1.multiply(t2).intValue();
+
+        t1 = new BigDecimal(Double.toString(Math.random()));
+        int toBeSent_B = t1.multiply(t2).intValue();
+
+        t1 = new BigDecimal(Double.toString(Math.random()));
+        int toBeSent_C = t1.multiply(t2).intValue();
+
+        tempMap.put("A", toBeSent_A);
+        tempMap.put("B", toBeSent_B);
+        tempMap.put("C", toBeSent_C);
+        return tempMap;
+    }
+
+
+    public void transfer( Map<String,Integer> m ) {
         r.lock();
         try {
-            Map<String,Integer> tempMap = new HashMap<>();
-
             Integer present_A = map.get("A");
             Integer present_B = map.get("B");
             Integer present_C = map.get("C");
-
-            BigDecimal t1;
-            BigDecimal t2;
-
-            t1 = new BigDecimal(Double.toString(Math.random()));
-            t2 = new BigDecimal(Double.toString(present_A));
-            int toBeSent_A = t1.multiply(t2).intValue();
-
-            t1 = new BigDecimal(Double.toString(Math.random()));
-            t2 = new BigDecimal(Double.toString(present_B));
-            int toBeSent_B = t1.multiply(t2).intValue();
-
-            t1 = new BigDecimal(Double.toString(Math.random()));
-            t2 = new BigDecimal(Double.toString(present_C));
-            int toBeSent_C = t1.multiply(t2).intValue();
-
-            tempMap.put("A", toBeSent_A);
-            this.map.replace("A", present_A - toBeSent_A);
-
-            tempMap.put("B", toBeSent_B);
-            this.map.replace("B", present_B - toBeSent_B);
-
-            tempMap.put("C", toBeSent_C);
-            this.map.replace("C", present_C - toBeSent_C);
-
-            return tempMap;
-
+            this.map.replace("A", present_A - m.get("A"));
+            this.map.replace("B", present_B - m.get("B"));
+            this.map.replace("C", present_C - m.get("C"));
         } finally {
             r.unlock();
         }
     }
 
-    public void transfer( Map<String,Integer> m ) {
-        //  TODO 1.2
-    }
 
     public void receive( Map<String,Integer> m ) {
         r.lock();
@@ -116,29 +112,4 @@ public class Cache extends HashMap<String,Integer>{
         }
     }
 
-    public static void main(String[] args) {
-        Cache free = new Cache();
-
-        System.out.println("A"+free.get("A"));
-        System.out.println("B"+free.get("B"));
-        System.out.println("C"+free.get("C"));
-
-        Map<String,Integer> fuck;
-
-        fuck = free.transfer();
-
-        System.out.println("sentA"+fuck.get("A"));
-        System.out.println("sentB"+fuck.get("B"));
-        System.out.println("sentC"+fuck.get("C"));
-
-        System.out.println("A"+free.get("A"));
-        System.out.println("B"+free.get("B"));
-        System.out.println("C"+free.get("C"));
-
-        free.receive(fuck);
-
-        System.out.println("A"+free.get("A"));
-        System.out.println("B"+free.get("B"));
-        System.out.println("C"+free.get("C"));
-    }
 }

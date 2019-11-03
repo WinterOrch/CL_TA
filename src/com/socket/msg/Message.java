@@ -1,10 +1,11 @@
 package com.socket.msg;
 
-import com.socket.Map;
-
 import java.io.Serializable;
 
+/**
+ * 所有消息的基类
+ */
 public class Message implements Serializable{
-    Map m = new Map();
-    int n = m.numNodes;
+
+    public int nodeId;
 }

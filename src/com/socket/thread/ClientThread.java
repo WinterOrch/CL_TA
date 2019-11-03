@@ -6,8 +6,11 @@ import com.socket.msg.*;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.Socket;
+import java.util.Objects;
 
-//Server reading objects sent by other clients in the system in a thread
+/**
+ * 接收套接字并根据收到对象类型进行处理
+ */
 public class ClientThread extends Thread {
     Socket cSocket;
     ProjectMain mainObj;
@@ -29,27 +32,21 @@ public class ClientThread extends Thread {
         while(true){
             try {
                 Message msg;
-                msg = (Message) ois.readObject();
+                msg = (Message) Objects.requireNonNull(ois).readObject();
                 // Synchronizing mainObj so that multiple threads access mainObj in a synchronized way
                 synchronized(mainObj){
 
                     //If message is a marker message then process has to turn red if its blue and send messages along all its
                     //channels
                     if(msg instanceof MarkerMsg){
+                        //  接收到来自channelNo节点的Marker
                         int channelNo = ((MarkerMsg) msg).nodeId;
-                        //TODO Chandy-Lamport协议策略
+                        //TODO 1.0 Chandy-Lamport协议策略
                     }
 
                     else if(msg instanceof ApplicationMsg){
-                        //TODO 接收消息策略
+                        ProjectMain.receive(ProjectMain.token2Map(((ApplicationMsg)msg).getMsg()));
                     }
-
-                    //If message is a state message then if this node id is 0 then process it
-                    // otherwise forward it to the parent on converge cast tree towards Node 0
-                    else if(msg instanceof StateMsg){
-                        //TODO 启动快照的策略
-                    }
-
                 }
             }
             catch (IOException | ClassNotFoundException e) {
