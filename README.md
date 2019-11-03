@@ -28,7 +28,7 @@
 
   例如对于如下图所示的拓扑结构，
 
-  ![](https://github.com/WinterOrch/CL_TA/blob/mod/%E7%A4%BA%E6%84%8F%E5%9B%BE.jpg)
+<img src="https://github.com/WinterOrch/CL_TA/blob/mod/%E7%A4%BA%E6%84%8F%E5%9B%BE.jpg" width="290" height="180" /> 
 
   当甲，乙，丙分别对应序号0，1，2时，邻接矩阵应当如下所示：
 
