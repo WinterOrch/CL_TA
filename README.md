@@ -27,8 +27,8 @@
   邻接矩阵，用于描述系统内的拓扑结构，通即为1，不通即为0。
 
   例如对于如下图所示的拓扑结构，
-![image]
-(img src="https://github.com/WinterOrch/CL_TA/blob/mod/%E7%A4%BA%E6%84%8F%E5%9B%BE.jpg)
+
+<img src="https://github.com/WinterOrch/CL_TA/blob/mod/示意图.jpg\>
 
   当甲，乙，丙分别对应序号0，1，2时，邻接矩阵应当如下所示：
 
