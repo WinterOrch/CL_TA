@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 enum State { SNAPPING,WORKING }
 
 public class ProjectMain {
-    private static Cache cache;
+    private Cache cache;
 
     private int currentId;
     private int numOfNodes;
@@ -41,6 +41,9 @@ public class ProjectMain {
     // Message Buffer Waiting to be Sent While Process is Snapping
     private HashMap<Integer,ConcurrentLinkedQueue<ApplicationMsg>> waitingBuffer = new HashMap<>();
 
+    // Message Buffer Waiting to be Received While Process is Snapping
+    private ConcurrentLinkedQueue<ApplicationMsg> hangingBuffer = new ConcurrentLinkedQueue<>();
+
     ProjectMain() {
         this.initialize();
     }
@@ -55,7 +58,7 @@ public class ProjectMain {
     /**
      * 生成新的转账信息并生成String
      */
-    public static String map2Token() {
+    public String map2Token() {
         Map<String,Integer> temp = cache.transfer();
         return temp.get("A").toString() + " " + temp.get("B").toString()
                 + " " + temp.get("C").toString();
@@ -64,7 +67,7 @@ public class ProjectMain {
     /**
      * 将String形式的转账信息转换为Map形式
      */
-    public static Map<String, Integer> token2Map(String s) {
+    private static Map<String, Integer> token2Map(String s) {
         Map<String, Integer> in;
         String[] num = s.split(" ");
 
@@ -76,11 +79,11 @@ public class ProjectMain {
         return in;
     }
 
-    public static void receive(Map<String,Integer> in) {
+    public void receive(Map<String,Integer> in) {
         cache.receive(in);
     }
 
-    public static void test() {
+    public void test() {
         cache.print();
     }
 
@@ -203,6 +206,13 @@ public class ProjectMain {
     }
 
     /**
+     * 用于供其它线程查看状态
+     */
+    public Boolean isSnapping() {
+        return this.currentState == State.SNAPPING;
+    }
+
+    /**
      * 发送信息m给ID为neighbour的邻节点
      */
     private void emitSingleMessage(int curNeighbor, Message m) {
@@ -212,12 +222,44 @@ public class ProjectMain {
             oos.flush();
 
             if(m instanceof ApplicationMsg) {
-                ProjectMain.cache.transfer(ProjectMain.token2Map(((ApplicationMsg)m).getMsg()));
+                this.cache.transfer(ProjectMain.token2Map(((ApplicationMsg)m).getMsg()));
             }
 
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * 快照期间（收到Marker后）收到的转账信息暂时不处理
+     */
+    public void hangMessage(ApplicationMsg m) {
+        this.hangingBuffer.add(m);
+    }
+
+    /**
+     * 快照结束后处理所有信息
+     */
+    public void processHangedMessage() {
+        if(!this.hangingBuffer.isEmpty()) {
+            for(int i = 0; i < this.hangingBuffer.size(); i++)
+                this.processApplicationMessage(this.hangingBuffer.poll());
+        }
+    }
+
+    /**
+     * 处理单条信息
+     */
+    public void processApplicationMessage(ApplicationMsg m) {
+        this.receive(ProjectMain.token2Map(m.getMsg()));
+    }
+
+    public void setStateWorking() {
+        this.currentState = State.WORKING;
+    }
+
+    public void setStateSnapping() {
+        this.currentState = State.SNAPPING;
     }
 
     private ApplicationMsg getApplicationMsg() {

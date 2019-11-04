@@ -39,13 +39,18 @@ public class ClientThread extends Thread {
                     //If message is a marker message then process has to turn red if its blue and send messages along all its
                     //channels
                     if(msg instanceof MarkerMsg){
+                        mainObj.setStateSnapping();
                         //  接收到来自channelNo节点的Marker
                         int channelNo = ((MarkerMsg) msg).nodeId;
                         //TODO 1.0 Chandy-Lamport协议策略
                     }
 
                     else if(msg instanceof ApplicationMsg){
-                        ProjectMain.receive(ProjectMain.token2Map(((ApplicationMsg)msg).getMsg()));
+                        if(mainObj.isSnapping()) {
+                            mainObj.hangMessage((ApplicationMsg)msg);
+                        }else {
+                            mainObj.processApplicationMessage((ApplicationMsg)msg);
+                        }
                     }
                 }
             }
