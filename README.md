@@ -2,7 +2,7 @@
 
 这里就项目中需要添加和修改的主要位置和内容进行说明，详细设计参考[**设计文档**](https://github.com/WinterOrch/CL_TA/blob/mod/%E8%AE%BE%E8%AE%A1%E6%96%87%E6%A1%A3.md)。
 
-**注意：**编码是UTF-8，使用Eclipse的同学可以到首选项"General-Workspace"里改编码格式来正确显示中文注释。
+**注意：** 编码是UTF-8，使用Eclipse的同学可以到首选项"General-Workspace"里改编码格式来正确显示中文注释。
 
 #### Map类
 
