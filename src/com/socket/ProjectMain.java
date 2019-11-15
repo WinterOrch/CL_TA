@@ -288,7 +288,7 @@ public class ProjectMain {
         mainObj.currentId = mainObj.nodesInSystem.get(mainObj.currentNode).nodeId;
 
         for(int i = 0; i < mainObj.nodesInSystem.size(); i++){
-            mainObj.nodesMapInSystem.put(mainObj.nodesMapInSystem.get(i).nodeId, mainObj.nodesInSystem.get(i));
+            mainObj.nodesMapInSystem.put(mainObj.nodesInSystem.get(i).nodeId, mainObj.nodesInSystem.get(i));
         }
 
         //  Start Server on Current Node
