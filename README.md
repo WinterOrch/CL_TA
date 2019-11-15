@@ -2,6 +2,8 @@
 
 这里就项目中需要添加和修改的主要位置和内容进行说明，详细设计参考[**设计文档**](https://github.com/WinterOrch/CL_TA/blob/mod/%E8%AE%BE%E8%AE%A1%E6%96%87%E6%A1%A3.md)。
 
+**注意：** 编码是UTF-8，使用Eclipse的同学可以到首选项"General-Workspace"里改编码格式来正确显示中文注释。
+
 #### Map类
 
 每个独立进程（节点，即ProjectMain实例 ）的拓扑信息都是从Map类获得的，传递的信息包含三个部分，拓扑的具体建立过程可以参见[**设计文档**](https://github.com/WinterOrch/CL_TA/blob/mod/%E8%AE%BE%E8%AE%A1%E6%96%87%E6%A1%A3.md)。导入拓扑方法不限，在源码中位置见**TODO 3.0**，这里只对使用方法进行说明：
